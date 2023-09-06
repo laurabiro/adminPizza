@@ -14,7 +14,6 @@ server.use(cors())
 server.use(express.static("database"))
 server.use(express.json())
 
-const folderPath = '/database/orders'
 
 type JSONData = Record<string, unknown>
 
@@ -61,6 +60,43 @@ server.post('/api/order', async (req: Request, res: Response) => {
   }
 
 })
+
+const folderPath = './database/orders'; 
+const outputFilePath = './orders.json';
+const refreshInterval = 1 * 60 * 1000;
+
+function mergeJSONFiles(folderPath: string, outputFile: string) {
+    const mergedData: Record<string, any> = {};
+
+    // Read all files in the folder
+    const fileNames = fs.readdirSync(folderPath);
+
+    for (const fileName of fileNames) {
+        const filePath = path.join(folderPath, fileName);
+
+        // Check if the file is a JSON file
+        if (path.extname(filePath) === '.json') {
+            try {
+                const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                mergedData[fileName] = data;
+            } catch (error) {
+                console.error(`Error reading or parsing ${fileName}: ${error}`);
+            }
+        }
+    }
+
+    
+    fs.writeFileSync(outputFile, JSON.stringify(mergedData, null, 2));
+    console.log(`Merged data saved to ${outputFile}`);
+}
+
+// Call the merge function
+mergeJSONFiles(folderPath, outputFilePath);
+
+setInterval(() => {
+  mergeJSONFiles(folderPath, outputFilePath);
+}, refreshInterval);
+
 
 /* server.get("/api/admin"), async (req: Request, res: Response) => {
 
